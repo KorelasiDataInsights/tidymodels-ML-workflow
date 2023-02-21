@@ -1,0 +1,120 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+## Introduction
+
+## Setup
+
+```{r}
+# Load the packages
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(testthat))
+suppressPackageStartupMessages(library(tidymodels))
+suppressPackageStartupMessages(library(yardstick))
+suppressPackageStartupMessages(library(DT))
+# suppressPackageStartupMessages(library(pROC))
+suppressPackageStartupMessages(library(recipes))
+suppressPackageStartupMessages(library(DALEXtra))
+suppressPackageStartupMessages(library(lightgbm))
+suppressPackageStartupMessages(library(bonsai))
+suppressPackageStartupMessages(library(ranger))
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(logger))
+
+```
+
+```{r}
+#source("R/load_libraries.R")
+source("R/ml_helper_functions.R")
+source("R/train_ml_model.R")
+```
+
+```{r}
+# Helper functiont to create a folder
+create_folder <- function(folder_path) {
+  if (dir.exists(folder_path)) {
+    log_info("Folder `{folder_path}` already exists.")
+  } else {
+    dir.create(folder_path)
+    log_info("Folder `{folder_path}` successfully created")
+  }
+}
+```
+
+if (!dir.exists(model_results_folder))
+
+```{r}
+# Model report folder
+model_report_folder <- here::here("model_validation")
+create_folder(model_report_folder)
+
+# Model results folder
+model_results_folder <- here::here("model_results")
+create_folder(model_results_folder)
+
+# Results from current run
+run_id <- paste0("run_", Sys.time()) %>% gsub(pattern=":| ", replacement = ".", x = .)
+run_results_folder <- file.path(model_results_folder, run_id)
+create_folder(run_results_folder)
+
+```
+
+### Load data
+
+```{r}
+# Load the mtcars dataset
+dat0 <- mtcars %>%
+  mutate(# Category = sample(c("A", "B"), size=nrow(.), replace=TRUE) %>% factor
+         vals = mpg + cyl + disp/hp + rnorm(nrow(.), 3, 3),
+         Category = ifelse(vals >= median(vals) + 1, "A", "B") %>% factor
+         ) %>%
+  select(-vals)
+
+
+dim(dat0)
+
+# Artificially increase number of features
+n <- 40
+N = nrow(dat0)
+for (k in 1:n) {
+  dat0[,paste0("x", k)] = rnorm(N)
+}
+
+# Artificially increase number of records
+dat <- dat0
+m <- 15
+for (k in 1:m) {
+  dat <- bind_rows(dat, dat0)
+}
+
+dim(dat)
+summary(dat)
+summary(dat$Category)
+dat
+
+```
+
+# Run the modeling pipeline
+
+```{r}
+model_res <- train_ml_model(training_df = dat, selected_algorithm = "random_forest", 
+                           model_mode = "classification", model_label="demo",
+                           model_specifications = model_specifications, num_folds = 3, 
+                           grid_size = 10, 
+                           num_bootstraps = 4,
+                           outcome_var = "Category", 
+                           features = colnames(dat) %>% .[. != "Category"], 
+                           do_parallel = FALSE, 
+                           show_plots = TRUE, 
+                           error_metric = "roc_auc"
+) 
+```
+
+```{r}
+
+```

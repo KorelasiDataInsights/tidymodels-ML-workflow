@@ -177,6 +177,7 @@ train_ml_model <- function(training_df, selected_algorithm = "gbm", model_mode =
     model_wflow = model_wflow,
     model_param_grid = model_param_grid,
     model_res = model_res,
+    model_train_time = model_train_time,
     param_names = param_names,
     tune_metrics = tune_metrics,
     plot_tune_metrics = plot_tune_metrics,
